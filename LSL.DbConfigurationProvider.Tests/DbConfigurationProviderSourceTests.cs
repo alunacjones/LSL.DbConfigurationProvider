@@ -49,6 +49,19 @@ namespace LSL.DbConfigurationProvider.Tests
         }
 
         [Test]
+        public void GivenDefaultSettings_ButNoDbSettingsItShouldReturnTheExpectedConfiguration()
+        {
+            var ctx = CreateContext();
+            var builder = new ConfigurationBuilder();
+            builder.AddDbConfiguration(() => ctx.Database.GetDbConnection());
+
+            var config = builder.Build();
+            var topLevel = config.GetChildren();
+            
+            topLevel.Should().BeEmpty();
+        }
+
+        [Test]
         public void GivenCustomSettings_ItShouldReturnTheExpectedConfiguration()
         {
             var ctx = CreateContext();

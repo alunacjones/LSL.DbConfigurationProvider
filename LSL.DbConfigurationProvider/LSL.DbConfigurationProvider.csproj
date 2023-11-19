@@ -14,9 +14,9 @@
     <TargetFrameworks>netstandard2.1</TargetFrameworks>
     <Version>1.0.1</Version>
     <PackageVersion>1.0.1</PackageVersion>
-    <PackageTags></PackageTags>
+    <PackageTags>configuration-provider;database;db;configuration;provider</PackageTags>
     <PackageReadmeFile>readme.md</PackageReadmeFile>
-    <PackageDescription>Description here</PackageDescription>
+    <PackageDescription>A Db configuration provider</PackageDescription>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/alunacjones/LSL.DbConfigurationProvider</RepositoryUrl>
     <Authors>alunacjones</Authors>
