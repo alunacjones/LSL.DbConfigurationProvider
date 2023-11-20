@@ -30,7 +30,7 @@ namespace LSL.DbConfigurationProvider.Tests
             ctx.SaveChanges();
 
             var builder = new ConfigurationBuilder();
-            builder.Add(new DbConfigurationProviderSource(() => ctx.Database.GetDbConnection()));
+            builder.Add(new DbConfigurationProviderSource(() => new SqliteKeepAliveDbConnection(ctx.Database.GetDbConnection())));
 
             var config = builder.Build();
             var topLevel = config.GetChildren();
@@ -53,7 +53,7 @@ namespace LSL.DbConfigurationProvider.Tests
         {
             var ctx = CreateContext();
             var builder = new ConfigurationBuilder();
-            builder.AddDbConfiguration(() => ctx.Database.GetDbConnection());
+            builder.AddDbConfiguration(() => new SqliteKeepAliveDbConnection(ctx.Database.GetDbConnection()));
 
             var config = builder.Build();
             var topLevel = config.GetChildren();
@@ -80,16 +80,28 @@ namespace LSL.DbConfigurationProvider.Tests
             ctx.SaveChanges();
 
             var builder = new ConfigurationBuilder();
-            builder.Add(new DbConfigurationProviderSource(() => ctx.Database.GetDbConnection(), "OtherSettings", "OtherKey", "OtherValue"));
+            builder.Add(new DbConfigurationProviderSource(() => new SqliteKeepAliveDbConnection(ctx.Database.GetDbConnection()), "OtherSettings", "OtherKey", "OtherValue"));
 
             var config = builder.Build();
-            var topLevel = config.GetChildren();
             var inner = config.GetSection("Inner").GetChildren();
+
+            ctx.OtherSettings.Add(new OtherSetting
+            {
+                OtherKey = "Als",
+                OtherValue = "Test2"
+            });
+
+            ctx.SaveChanges();
+            
+            config.Reload();
+
+            var topLevel = config.GetChildren();
 
             topLevel.Should().BeEquivalentTo(new[]
             {
                 new { Key = "TopLevel", Value = "Test" },
-                new { Key = "Inner", Value = (string)null }
+                new { Key = "Inner", Value = (string)null },
+                new { Key = "Als", Value = "Test2" }
             });
 
             inner.Should().BeEquivalentTo(new[]

@@ -37,38 +37,33 @@ namespace LSL.DbConfigurationProvider
         /// <inheritdoc/>
         public override void Load()
         {
-            using (var dbConnection = _connectionProvider())
+            using var dbConnection = _connectionProvider();
+
+            dbConnection.Open();
+            var factory = DbProviderFactories.GetFactory(dbConnection);
+            var commandBuilder = factory.CreateCommandBuilder();
+
+            var quotedTableName = commandBuilder?.QuoteIdentifier(_tableName) ?? _tableName;
+            var quotedKeyField = commandBuilder?.QuoteIdentifier(_keyField) ?? _keyField;
+            var quotedValueField = commandBuilder?.QuoteIdentifier(_valueField) ?? _valueField;
+
+            using var cmd = dbConnection.CreateCommand();
+            cmd.CommandText = $"Select {quotedKeyField}, {quotedValueField} From {quotedTableName}";
+            using var reader = cmd.ExecuteReader();
+            if (reader.HasRows)
             {
-                dbConnection.Open();
-                var factory = DbProviderFactories.GetFactory(dbConnection);
-                var commandBuilder = factory.CreateCommandBuilder();
+                var result = new Dictionary<string, string>();
 
-                var quotedTableName = commandBuilder?.QuoteIdentifier(_tableName) ?? _tableName;
-                var quotedKeyField = commandBuilder?.QuoteIdentifier(_keyField) ?? _keyField;
-                var quotedValueField = commandBuilder?.QuoteIdentifier(_valueField) ?? _valueField;
-
-                using (var cmd = dbConnection.CreateCommand())
+                while (reader.Read())
                 {
-                    cmd.CommandText = $"Select {quotedKeyField}, {quotedValueField} From {quotedTableName}";
-                    using (var reader = cmd.ExecuteReader())
-                    {
-                        if (reader.HasRows)
-                        {
-                            var result = new Dictionary<string, string>();
-
-                            while (reader.Read())
-                            {
-                                result.Add(reader[_keyField].ToString(), reader[_valueField].ToString());
-                            }
-
-                            Data = result;
-                        }
-                        else
-                        {
-                            Data = new Dictionary<string, string>();
-                        }
-                    }
+                    result.Add(reader[_keyField].ToString(), reader[_valueField].ToString());
                 }
+
+                Data = result;
+            }
+            else
+            {
+                Data = new Dictionary<string, string>();
             }
         }
     }
