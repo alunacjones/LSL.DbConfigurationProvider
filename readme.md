@@ -11,9 +11,8 @@ Provides a `ConfigurationProvider` that reads settings from a database table.
 The following example sets up a DB configuration provider that fetches the settings from a table called `Settings` with a key field called `Key` and a value field called `Value`.
 
 ```csharp
-var ctx = new MyDbContext(); // Using an EF Core context here
 var builder = new ConfigurationBuilder();
-builder.AddDbConfiguration(() => ctx.Database.GetDbConnection());
+builder.AddDbConfiguration(() => new SqlConnection("my-connection-string"));
 ```
 
 ## Configuring with the custom settings
@@ -21,8 +20,7 @@ builder.AddDbConfiguration(() => ctx.Database.GetDbConnection());
 The following example sets up a DB configuration provider that fetches the settings from a table called `OtherSettings` with a key field called `OtherKey` and a value field called `OtherValue`.
 
 ```csharp
-var ctx = new MyDbContext(); // Using an EF Core context here
 var builder = new ConfigurationBuilder();
-builder.AddDbConfiguration(() => ctx.Database.GetDbConnection(), "OtherSettings", "OtherKey", "OtherValue");
+builder.AddDbConfiguration(() => new SqlConnection("my-connection-string"), "OtherSettings", "OtherKey", "OtherValue");
 ```
 
