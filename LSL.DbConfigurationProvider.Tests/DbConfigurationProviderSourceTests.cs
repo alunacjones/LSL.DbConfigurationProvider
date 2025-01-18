@@ -4,6 +4,7 @@ using System.Linq;
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Configuration;
 using NUnit.Framework;
 
@@ -60,6 +61,35 @@ namespace LSL.DbConfigurationProvider.Tests
             
             topLevel.Should().BeEmpty();
         }
+
+        [Test]
+        public void GivenDefaultSettings_ButWithAKeyPrefixAndDataItShouldReturnTheExpectedConfiguration()
+        {
+            var keyPrefix = "My.App:";
+            var ctx = CreateContext();
+
+            ctx.Settings.Add(new Setting
+            {
+                Key = $"{keyPrefix}Prefixed",
+                Value = "AlsTest"
+            });
+
+            ctx.SaveChanges();
+
+            var builder = new ConfigurationBuilder();
+            builder.AddDbConfiguration(
+                () => new SqliteKeepAliveDbConnection(ctx.Database.GetDbConnection()),
+                keyPrefix: keyPrefix
+            );
+
+            var config = builder.Build();
+            var topLevel = config.GetChildren();
+            
+            topLevel.Should().BeEquivalentTo(new[]
+            {
+                new { Key = "Prefixed", Value = "AlsTest" }
+            });
+        }        
 
         [Test]
         public void GivenCustomSettings_ItShouldReturnTheExpectedConfiguration()

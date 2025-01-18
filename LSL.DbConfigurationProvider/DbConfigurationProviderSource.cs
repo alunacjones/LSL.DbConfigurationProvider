@@ -13,6 +13,7 @@ namespace LSL.DbConfigurationProvider
         private readonly string _tableName;
         private readonly string _keyField;
         private readonly string _valueField;
+        private readonly string _keyPrefix;
 
         /// <summary>
         /// Initialise the source wiht a given connection provider
@@ -21,16 +22,19 @@ namespace LSL.DbConfigurationProvider
         /// <param name="tableName"></param>
         /// <param name="keyField"></param>
         /// <param name="valueField"></param>
+        /// <param name="keyPrefix"></param>
         public DbConfigurationProviderSource(
             Func<DbConnection> connectionProvider,
             string tableName = "Settings",
             string keyField = "Key",
-            string valueField = "Value")
+            string valueField = "Value",
+            string keyPrefix = null)
         {
             _connectionProvider = connectionProvider;
             _tableName = tableName;
             _keyField = keyField;
             _valueField = valueField;
+            _keyPrefix = keyPrefix;
         }
 
         /// <inheritdoc/>
@@ -38,6 +42,7 @@ namespace LSL.DbConfigurationProvider
             _connectionProvider,
             _tableName,
             _keyField,
-            _valueField);
+            _valueField,
+            _keyPrefix);
     }
 }

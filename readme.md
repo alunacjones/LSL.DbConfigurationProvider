@@ -24,3 +24,13 @@ var builder = new ConfigurationBuilder();
 builder.AddDbConfiguration(() => new SqlConnection("my-connection-string"), "OtherSettings", "OtherKey", "OtherValue");
 ```
 
+## Configuring with a key prefix
+
+The following example sets up a DB configuration provider that only fetches settings whose keys are prefixed with the value of the `keyPrefix` parameter.
+
+```csharp
+var builder = new ConfigurationBuilder();
+builder.AddDbConfiguration(() => new SqlConnection("my-connection-string"), keyPrefix: "my-application:");
+```
+
+All returned settings will have the prefix automatically removed from the key name.
