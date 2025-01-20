@@ -62,7 +62,6 @@ namespace LSL.DbConfigurationProvider
             }
         }
 
-        /// <inheritdoc/>
         private void InternalLoad()
         {
             using var dbConnection = _connectionProvider();
@@ -71,9 +70,9 @@ namespace LSL.DbConfigurationProvider
             var factory = DbProviderFactories.GetFactory(dbConnection);
             var commandBuilder = factory.CreateCommandBuilder();
 
-            var quotedTableName = commandBuilder?.QuoteIdentifier(_tableName) ?? _tableName;
-            var quotedKeyField = commandBuilder?.QuoteIdentifier(_keyField) ?? _keyField;
-            var quotedValueField = commandBuilder?.QuoteIdentifier(_valueField) ?? _valueField;
+            var quotedTableName = commandBuilder.NullSafeQuoteIdentifier(_tableName);
+            var quotedKeyField = commandBuilder.NullSafeQuoteIdentifier(_keyField);
+            var quotedValueField = commandBuilder.NullSafeQuoteIdentifier(_valueField);
             
             using var cmd = dbConnection.CreateCommand();
             cmd.CommandText = $"Select {quotedKeyField}, {quotedValueField} From {quotedTableName}";

@@ -1,7 +1,5 @@
 using System;
 using System.ComponentModel.DataAnnotations;
-using System.Data.Common;
-using System.Linq;
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -86,6 +84,21 @@ namespace LSL.DbConfigurationProvider.Tests
             topLevel.Should().BeEmpty();
             loadFailedCalled.Should().BeTrue();
             capturedContext.Exception.Should().BeOfType<SqliteException>();
+        }
+
+        [Test]
+        public void GivenAnIncorrectTableNameAndNoLoadErrorDelegate_ThenItShouldSilentlyFail()
+        {
+            var ctx = CreateContext();
+            var builder = new ConfigurationBuilder();
+            builder.AddDbConfiguration(
+                () => new SqliteKeepAliveDbConnection(ctx.Database.GetDbConnection()),
+                "NotATable");
+
+            var config = builder.Build();            
+            var topLevel = config.GetChildren();
+
+            topLevel.Should().BeEmpty();
         }
 
         [Test]

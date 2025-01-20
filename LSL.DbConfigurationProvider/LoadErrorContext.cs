@@ -15,6 +15,11 @@ namespace LSL.DbConfigurationProvider
         /// <summary>
         /// If set to <c>true</c> then the exception will be re-thrown
         /// </summary>
+        /// <remarks>
+        /// The thrown exception is a <c>DbConfigurationProviderLoadException</c>
+        /// that allows for an application to catch generically and act accordingly
+        /// against the <c>InnerException</c>
+        /// </remarks>
         /// <value></value>
         public bool RethrowException { get; set; }
 
