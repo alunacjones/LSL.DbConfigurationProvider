@@ -63,7 +63,7 @@ builder.AddDbConfiguration(
 
 ### onLoadError Context
 
-The `onLoadError` delegate is passed a context that hs the following members available:
+The `onLoadError` delegate is passed a context that has the following members available:
 
 #### Exception 
 
