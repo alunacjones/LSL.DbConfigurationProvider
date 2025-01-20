@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Data.Common;
 using Microsoft.Extensions.Configuration;
 
@@ -15,6 +14,7 @@ namespace LSL.DbConfigurationProvider
         private readonly string _keyField;
         private readonly string _valueField;
         private readonly string _keyPrefix;
+        private readonly Action<LoadErrorContext> _onLoadError;
 
         /// <summary>
         /// Create a provider with overridden values for table name and field names
@@ -24,22 +24,46 @@ namespace LSL.DbConfigurationProvider
         /// <param name="keyField"></param>
         /// <param name="valueField"></param>
         /// <param name="keyPrefix"></param>
+        /// <param name="onLoadError"></param>
         internal DbConfigurationProvider(
             Func<DbConnection> connectionProvider,
             string tableName = "Settings",
             string keyField = "Key",
             string valueField = "Value",
-            string keyPrefix = null)
+            string keyPrefix = null,
+            Action<LoadErrorContext> onLoadError = null)
         {
             _connectionProvider = connectionProvider;
             _tableName = tableName;
             _keyField = keyField;
             _valueField = valueField;
             _keyPrefix = keyPrefix;
+            _onLoadError = onLoadError;
         }
 
         /// <inheritdoc/>
         public override void Load()
+        {
+            Data.Clear();
+
+            try
+            {
+                InternalLoad();
+            }
+            catch (Exception ex)
+            {
+                var context = new LoadErrorContext(ex);
+                _onLoadError?.Invoke(context);
+
+                if (context.RethrowException)
+                {
+                    throw new DbConfigurationProviderLoadException(ex);
+                }
+            }
+        }
+
+        /// <inheritdoc/>
+        private void InternalLoad()
         {
             using var dbConnection = _connectionProvider();
 
@@ -62,32 +86,19 @@ namespace LSL.DbConfigurationProvider
                 parameter.Value = _keyPrefix + "%";
                 cmd.Parameters.Add(parameter);
             }
-            
+
             using var reader = cmd.ExecuteReader();
-            if (reader.HasRows)
-            {
-                var result = new Dictionary<string, string>();
 
-                while (reader.Read())
-                {
-                    result.Add(
-                        TransformKey(reader[_keyField].ToString()), 
-                        reader[_valueField].ToString());
-                }
-
-                Data = result;
-            }
-            else
+            while (reader.Read())
             {
-                Data = new Dictionary<string, string>();
+                Data.Add(
+                    TransformKey(reader[_keyField].ToString()), 
+                    reader[_valueField].ToString());
             }
         }
 
-        private string TransformKey(string key)
-        {
-            return _keyPrefix == null
-                ? key
-                : key.Substring(_keyPrefix.Length);
-        }
+        private string TransformKey(string key) => _keyPrefix == null
+            ? key
+            : key.Substring(_keyPrefix.Length);
     }
 }
