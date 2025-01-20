@@ -14,6 +14,7 @@ namespace LSL.DbConfigurationProvider
         private readonly string _keyField;
         private readonly string _valueField;
         private readonly string _keyPrefix;
+        private readonly Action<LoadErrorContext> _onLoadError;
 
         /// <summary>
         /// Initialise the source wiht a given connection provider
@@ -23,18 +24,21 @@ namespace LSL.DbConfigurationProvider
         /// <param name="keyField"></param>
         /// <param name="valueField"></param>
         /// <param name="keyPrefix"></param>
+        /// <param name="onLoadError"></param>
         public DbConfigurationProviderSource(
             Func<DbConnection> connectionProvider,
             string tableName = "Settings",
             string keyField = "Key",
             string valueField = "Value",
-            string keyPrefix = null)
+            string keyPrefix = null,
+            Action<LoadErrorContext> onLoadError = null)
         {
             _connectionProvider = connectionProvider;
             _tableName = tableName;
             _keyField = keyField;
             _valueField = valueField;
             _keyPrefix = keyPrefix;
+            _onLoadError = onLoadError;
         }
 
         /// <inheritdoc/>
@@ -43,6 +47,7 @@ namespace LSL.DbConfigurationProvider
             _tableName,
             _keyField,
             _valueField,
-            _keyPrefix);
+            _keyPrefix,
+            _onLoadError);
     }
 }

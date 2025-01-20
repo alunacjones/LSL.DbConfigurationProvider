@@ -41,3 +41,39 @@ builder.AddDbConfiguration(
 ```
 
 All returned settings will have the prefix automatically removed from the key name.
+
+## Dealing with errors on load
+
+An optional paramter `onLoadError` allows for the passing of a delegate to decide what to do when an error occurs on loading settings from the DB.
+
+```csharp
+var builder = new ConfigurationBuilder();
+builder.AddDbConfiguration(
+    () => new SqlConnection("my-connection-string"), 
+    onLoadError: context =>
+    {
+        Console.WriteLine(context.Exception.ToString());
+
+        // NOTE: The following is not required really
+        // as RethrowException defaults to false.
+        // It is set here only to show that this is an option.
+        context.RethrowException = false;
+    });
+```
+
+### onLoadError Context
+
+The `onLoadError` delegate is passed a context that has the following members available:
+
+#### Exception 
+
+This readonly property provides the exception that was thrown so that an error handler can
+act appropriately based on what was thrown.
+
+#### RethrowException
+
+This property defaults to `false` but can be set to `true` in order to throw an exception
+of type `DbConfigurationProviderLoadException` so that a consuming application can react to 
+the problem and inspect the `InnerException` and act accordingly.
+
+> **NOTE**: The `InnerException` is the instance of the originally thrown exception.

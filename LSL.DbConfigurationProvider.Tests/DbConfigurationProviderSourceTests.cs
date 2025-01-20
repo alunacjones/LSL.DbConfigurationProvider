@@ -1,6 +1,5 @@
 using System;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -61,6 +60,71 @@ namespace LSL.DbConfigurationProvider.Tests
             
             topLevel.Should().BeEmpty();
         }
+
+        [Test]
+        public void GivenAnIncorrectTableNameAndALoadErrorDelegate_ItShouldCallTheDelegate()
+        {
+            var loadFailedCalled = false;
+            LoadErrorContext capturedContext = null!;
+
+            var ctx = CreateContext();
+            var builder = new ConfigurationBuilder();
+            builder.AddDbConfiguration(
+                () => new SqliteKeepAliveDbConnection(ctx.Database.GetDbConnection()),
+                "NotATable",
+                onLoadError: ctx => 
+                {
+                    loadFailedCalled = true;
+                    capturedContext = ctx;
+                });
+
+            var config = builder.Build();            
+            var topLevel = config.GetChildren();
+
+            topLevel.Should().BeEmpty();
+            loadFailedCalled.Should().BeTrue();
+            capturedContext.Exception.Should().BeOfType<SqliteException>();
+        }
+
+        [Test]
+        public void GivenAnIncorrectTableNameAndNoLoadErrorDelegate_ThenItShouldSilentlyFail()
+        {
+            var ctx = CreateContext();
+            var builder = new ConfigurationBuilder();
+            builder.AddDbConfiguration(
+                () => new SqliteKeepAliveDbConnection(ctx.Database.GetDbConnection()),
+                "NotATable");
+
+            var config = builder.Build();            
+            var topLevel = config.GetChildren();
+
+            topLevel.Should().BeEmpty();
+        }
+
+        [Test]
+        public void GivenAnIncorrectTableNameAndALoadErrorDelegateThatExpectesTheExceptionToBeThrown_ItShouldReThrow()
+        {
+            var loadFailedCalled = false;
+            var ctx = CreateContext();
+            var builder = new ConfigurationBuilder();
+
+            builder.AddDbConfiguration(
+                () => new SqliteKeepAliveDbConnection(ctx.Database.GetDbConnection()),
+                "NotATable",
+                onLoadError: ctx => 
+                {
+                    loadFailedCalled = true;
+                    ctx.RethrowException = true;
+                });
+
+            var toRun = new Action(() =>  builder.Build());
+            toRun.Should().Throw<DbConfigurationProviderLoadException>()
+                .WithMessage("DbConfigurationProvider load error. See InnerException for details")
+                .WithInnerException<SqliteException>()
+                .WithMessage("SQLite Error 1: 'no such table: NotATable'.");
+
+            loadFailedCalled.Should().BeTrue();
+        }        
 
         [Test]
         public void GivenDefaultSettings_ButWithAKeyPrefixAndDataItShouldReturnTheExpectedConfiguration()

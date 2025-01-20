@@ -18,6 +18,7 @@ namespace LSL.DbConfigurationProvider
         /// <param name="keyField"></param>
         /// <param name="valueField"></param>
         /// <param name="keyPrefix"></param>
+        /// <param name="onLoadError"></param>
         /// <returns></returns>
         public static IConfigurationBuilder AddDbConfiguration(
             this IConfigurationBuilder source,
@@ -25,11 +26,13 @@ namespace LSL.DbConfigurationProvider
             string tableName = "Settings",
             string keyField = "Key",
             string valueField = "Value",
-            string keyPrefix = null) => source.Add(new DbConfigurationProviderSource(
+            string keyPrefix = null,
+            Action<LoadErrorContext> onLoadError = null) => source.Add(new DbConfigurationProviderSource(
                 connectionProvider,
                 tableName,
                 keyField,
                 valueField,
-                keyPrefix));
+                keyPrefix,
+                onLoadError));
     }
 }
