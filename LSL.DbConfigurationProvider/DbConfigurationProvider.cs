@@ -9,36 +9,11 @@ namespace LSL.DbConfigurationProvider
     /// </summary>
     public class DbConfigurationProvider : ConfigurationProvider
     {
-        private readonly Func<DbConnection> _connectionProvider;
-        private readonly string _tableName;
-        private readonly string _keyField;
-        private readonly string _valueField;
-        private readonly string _keyPrefix;
-        private readonly Action<LoadErrorContext> _onLoadError;
+        private readonly DbConfigurationProviderSource _source;
 
-        /// <summary>
-        /// Create a provider with overridden values for table name and field names
-        /// </summary>
-        /// <param name="connectionProvider"></param>
-        /// <param name="tableName"></param>
-        /// <param name="keyField"></param>
-        /// <param name="valueField"></param>
-        /// <param name="keyPrefix"></param>
-        /// <param name="onLoadError"></param>
-        internal DbConfigurationProvider(
-            Func<DbConnection> connectionProvider,
-            string tableName = "Settings",
-            string keyField = "Key",
-            string valueField = "Value",
-            string keyPrefix = null,
-            Action<LoadErrorContext> onLoadError = null)
+        internal DbConfigurationProvider(DbConfigurationProviderSource source)
         {
-            _connectionProvider = connectionProvider;
-            _tableName = tableName;
-            _keyField = keyField;
-            _valueField = valueField;
-            _keyPrefix = keyPrefix;
-            _onLoadError = onLoadError;
+            _source = source;
         }
 
         /// <inheritdoc/>
@@ -53,7 +28,7 @@ namespace LSL.DbConfigurationProvider
             catch (Exception ex)
             {
                 var context = new LoadErrorContext(ex);
-                _onLoadError?.Invoke(context);
+                _source.OnLoadError?.Invoke(context);
 
                 if (context.RethrowException)
                 {
@@ -64,25 +39,25 @@ namespace LSL.DbConfigurationProvider
 
         private void InternalLoad()
         {
-            using var dbConnection = _connectionProvider();
+            using var dbConnection = _source.ConnectionProvider();
 
             dbConnection.Open();
             var factory = DbProviderFactories.GetFactory(dbConnection);
             var commandBuilder = factory.CreateCommandBuilder();
 
-            var quotedTableName = commandBuilder.NullSafeQuoteIdentifier(_tableName);
-            var quotedKeyField = commandBuilder.NullSafeQuoteIdentifier(_keyField);
-            var quotedValueField = commandBuilder.NullSafeQuoteIdentifier(_valueField);
+            var quotedTableName = commandBuilder.NullSafeQuoteIdentifier(_source.TableName);
+            var quotedKeyField = commandBuilder.NullSafeQuoteIdentifier(_source.KeyField);
+            var quotedValueField = commandBuilder.NullSafeQuoteIdentifier(_source.ValueField);
             
             using var cmd = dbConnection.CreateCommand();
             cmd.CommandText = $"Select {quotedKeyField}, {quotedValueField} From {quotedTableName}";
 
-            if (_keyPrefix != null)
+            if (_source.KeyPrefix != null)
             {
                 cmd.CommandText += $" Where {quotedKeyField} Like @keyPrefix";
                 var parameter = cmd.CreateParameter();
                 parameter.ParameterName = "keyPrefix";
-                parameter.Value = _keyPrefix + "%";
+                parameter.Value = _source.KeyPrefix + "%";
                 cmd.Parameters.Add(parameter);
             }
 
@@ -91,13 +66,13 @@ namespace LSL.DbConfigurationProvider
             while (reader.Read())
             {
                 Data.Add(
-                    TransformKey(reader[_keyField].ToString()), 
-                    reader[_valueField].ToString());
+                    TransformKey(reader[_source.KeyField].ToString()), 
+                    reader[_source.ValueField].ToString());
             }
         }
 
-        private string TransformKey(string key) => _keyPrefix == null
+        private string TransformKey(string key) => _source.KeyPrefix == null
             ? key
-            : key.Substring(_keyPrefix.Length);
+            : key.Substring(_source.KeyPrefix.Length);
     }
 }

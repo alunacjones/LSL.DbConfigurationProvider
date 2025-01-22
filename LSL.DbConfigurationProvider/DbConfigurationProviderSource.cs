@@ -9,15 +9,8 @@ namespace LSL.DbConfigurationProvider
     /// </summary>
     public class DbConfigurationProviderSource : IConfigurationSource
     {
-        private readonly Func<DbConnection> _connectionProvider;
-        private readonly string _tableName;
-        private readonly string _keyField;
-        private readonly string _valueField;
-        private readonly string _keyPrefix;
-        private readonly Action<LoadErrorContext> _onLoadError;
-
         /// <summary>
-        /// Initialise the source wiht a given connection provider
+        /// Initialise the source with a given connection provider
         /// </summary>
         /// <param name="connectionProvider"></param>
         /// <param name="tableName"></param>
@@ -33,21 +26,22 @@ namespace LSL.DbConfigurationProvider
             string keyPrefix = null,
             Action<LoadErrorContext> onLoadError = null)
         {
-            _connectionProvider = connectionProvider;
-            _tableName = tableName;
-            _keyField = keyField;
-            _valueField = valueField;
-            _keyPrefix = keyPrefix;
-            _onLoadError = onLoadError;
+            ConnectionProvider = connectionProvider;
+            TableName = tableName;
+            KeyField = keyField;
+            ValueField = valueField;
+            KeyPrefix = keyPrefix;
+            OnLoadError = onLoadError;
         }
 
+        internal Func<DbConnection> ConnectionProvider { get; }
+        internal string TableName { get; }
+        internal string KeyField { get; }
+        internal string ValueField { get; }
+        internal string KeyPrefix { get; }
+        internal Action<LoadErrorContext> OnLoadError { get; }
+
         /// <inheritdoc/>
-        public IConfigurationProvider Build(IConfigurationBuilder builder) => new DbConfigurationProvider(
-            _connectionProvider,
-            _tableName,
-            _keyField,
-            _valueField,
-            _keyPrefix,
-            _onLoadError);
+        public IConfigurationProvider Build(IConfigurationBuilder builder) => new DbConfigurationProvider(this);
     }
 }
